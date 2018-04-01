@@ -1,0 +1,1 @@
+void playMusic (int number);

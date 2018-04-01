@@ -1,0 +1,77 @@
+/*************** Trabalho 1 da disciplina INF1805 ***************/
+/*** Aluna: Anna Leticia Alegria
+/*** Matrícula: 1410427
+
+/*** Como usar o relógio despertador:
+
+  O horário inicial do relógio, ao ligar é 00:00, assim como o horário default do alarme.
+
+  /** Para mudar o horário atual:
+
+      - Passo 1:
+          Pressionar o botão 1 por dois segundos.
+          O LED1 ficará piscando indicando que o usuário está mudando o horário.
+          A hora do relógio para de rodar.
+          Se o usuário não for para o próximo passo em cinco segundos, sairá do modo de trocar o horário.
+
+      - Passo 2:
+          Em seguida, pressionar o botão 2 por dois segundos para ajustar as horas.
+          O LED1 ficará aceso de forma fixa e o LED2 ficará piscando.
+          Se o usuário não der um comando para o relógio em cinco segundos, sairá do modo de trocar o horário.
+          Caso o usuário tenha terminado de ajustar as horas e não queira ajustar os minutos, pode esperar cinco segundos para voltar ao estado normal do relógio.
+          Para ajustar as horas:
+            - Pressionar o botão 1 aumentará uma hora. Caso chegue em 23 horas e pressione o botão 1 novamente, a hora irá para 00.
+            - Pressionar o botão 3 diminuirá uma hora. Caso chegue em 00 hora e pressione o botão 3 novamente, a hora irá para 23.
+            - Ao segurar o botão 1 ou o botão 3, as horas serão incrementadas/decrementadas continuamente.
+
+      - Passo 3:
+          Para ajuste de minutos, é só pressionar o botão 2 por dois segundos enquanto estiver no modo de ajuste de horas (Passo 2).
+          O LED1 continuará fixo, o LED2 ficará aceso de forma fixa e o LED3 ficará piscando.
+          Se o usuário não der um comando para o relógio em cinco segundos, sairá do modo de trocar o horário.
+          Caso o usuário tenha terminado de ajustar os minutos, pode esperar cinco segundos para sair do modo de trocar o horário.
+          Para ajustar os minutos:
+            - Pressionar o botão 1 aumentará um minuto. Caso chegue em 59 minutos e pressione o botão 1 novamente, os minutos irão para 00 e uma hora será incrementada.
+            - Pressionar o botão 3 diminuirá um minuto. Caso chegue em 00 minutos e pressione o botão 3 novamente, os minutos irão para 59 e uma hora será decrementada.
+            - Ao segurar o botão 1 ou o botão 3, os minutos serão incrementadas/decrementadas continuamente.
+
+
+  /** Para mudar o horário do alarme:
+
+      - Passo 1:
+          Pressionar o botão 3 por dois segundos.
+          O LED3 ficará piscando indicando que o usuário está mudando o horário do alarme.
+          A hora do relógio continua a rodar mas o horário mostrado no display é o horário do alarme.
+          Se o usuário não for para o próximo passo em cinco segundos, sairá do modo de trocar o horário do alarme.
+
+      - Passo 2:
+          Em seguida, pressionar o botão 2 por dois segundos para ajustar as horas do alarme.
+          O LED3 ficará aceso de forma fixa e o LED1 ficará piscando.
+          Se o usuário não der um comando para o relógio em cinco segundos, sairá do modo de trocar o horário do alarme.
+          Caso o usuário tenha terminado de ajustar as horas e não queira ajustar os minutos, pode esperar cinco segundos para voltar ao estado normal do relógio.
+          Para ajustar as horas do alarme:
+            - Pressionar o botão 1 aumentará uma hora. Caso chegue em 23 horas e pressione o botão 1 novamente, a hora irá para 00.
+            - Pressionar o botão 3 diminuirá uma hora. Caso chegue em 00 hora e pressione o botão 3 novamente, a hora irá para 23.
+            - Ao segurar o botão 1 ou o botão 3, as horas serão incrementadas/decrementadas continuamente.
+
+      - Passo 3:
+          Para ajuste de minutos, é só pressionar o botão 2 por dois segundos enquanto estiver no modo de ajuste de horas (Passo 2).
+          O LED3 continuará fixo, o LED1 ficará aceso de forma fixa e o LED2 ficará piscando.
+          Se o usuário não der um comando para o relógio em cinco segundos, sairá do modo de trocar o horário do alarme.
+          Caso o usuário tenha terminado de ajustar os minutos, pode esperar cinco segundos para sair do modo de trocar o horário do alarme.
+          Para ajustar os minutos do alarme:
+            - Pressionar o botão 1 aumentará um minuto. Caso chegue em 59 minutos e pressione o botão 1 novamente, os minutos irão para 00 e uma hora será incrementada.
+            - Pressionar o botão 3 diminuirá um minuto. Caso chegue em 00 minutos e pressione o botão 3 novamente, os minutos irão para 59 e uma hora será decrementada.
+            - Ao segurar o botão 1 ou o botão 3, os minutos serão incrementadas/decrementadas continuamente.
+
+
+  /** Para ligar/desligar o alarme:
+
+      - Enquanto o relógio estiver no modo default, manter pressionado o botão 2 por dois segundos.
+        Isto é, só é possível ligar ou desligar o alarme se não estiver no modo de troca de horário nem troca de horário do alarme.
+        Se o alarme estiver ligado, o LED4 ficará aceso de forma fixa. Caso contrário, o LED4 ficará desligado.
+
+
+  /** Para ativar o modo soneca:
+
+      - Enquanto o alarme estiver tocando, pressionar o botão 1 e 3 ao mesmo tempo por dois segundos ativará o modo soneca.
+        O modo soneca acrescentará cinco minutos no horário do alarme.
