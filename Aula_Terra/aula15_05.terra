@@ -1,0 +1,32 @@
+#include "/home/terra/TerraNG/terra/TerraNet.defs"
+#define EVENTO_LED0 0
+
+var short vValue;
+emit LEDS(OFF);
+par do
+	loop do
+		par/and do
+			emit REQ_VOLTS();
+			vValue = await VOLTS;
+			if vValue > 1000 or vValue < 990 then
+				emit REQ_CUSTOM_A(EVENTO_LED0);
+			end
+		with
+			await 10s;
+		end
+	end
+with
+	loop do
+		await CUSTOM_A(EVENTO_LED0);
+		loop do
+			par/or do
+				emit LED0(ON);
+				await 25s;
+				emit LED0(OFF);
+				break;
+			with
+				await CUSTOM_A(EVENTO_LED0);
+			end
+		end
+	end
+end
