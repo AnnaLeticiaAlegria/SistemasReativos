@@ -1,0 +1,173 @@
+// Pedro Ferreira 1320981
+// Renan da Fonte 1412122
+// Anna Leticia Alegria 1410427
+#include "/home/terra/TerraNG/terra/TerraNet.defs"
+
+
+emit LEDS(OFF);
+
+#define MSG_TIPO_GET 30
+#define MSG_TIPO_SEND 31
+#define MSG_TIPO_PATH 32
+
+pktype node from radioMsg with
+	var short distanciaFrente;
+	var short noEnviado;
+	var short noDesejado;
+	var short led;
+end
+
+
+var node msgNodeGet;
+var node msgNodeSend;
+var node msgNodePath;
+var node recebido;
+var node recebidoPath;
+var node recebidoSend;
+var node msgGenerico;
+var short pValue;
+var short dist = 1000;
+var short tValue;
+var short vValue;
+var short recebidoDe;
+
+
+par do
+	loop do
+		//Checa se valor está alterado para enviar mensagem
+		emit REQ_VOLTS();
+		vValue = await VOLTS;
+		await 1s;
+		if getNodeId() == 11 and vValue > 1000 then
+			msgNodeGet.source = getNodeId();
+			msgNodeGet.target = BROADCAST;
+			msgNodeGet.type = MSG_TIPO_GET;
+			msgNodeGet.distanciaFrente = 0;
+
+			dist = 0;
+
+			msgNodeGet.noEnviado = 11;
+			emit REQ_PHOTO();
+			pValue = await PHOTO;
+			msgNodeGet.noDesejado = pValue/10;
+
+			qPut(msgNodeGet);
+		end
+	end
+with
+	loop do
+		//Checa se recebeu mensagem GET para repassar
+		recebido = await RECEIVE(MSG_TIPO_GET);
+		await 1s;
+		if recebido.distanciaFrente < dist then
+			var ubyte msgType = MSG_TIPO_GET;
+			if recebido.noDesejado == getNodeId() then
+				msgType = MSG_TIPO_SEND;
+			end
+			dist = recebido.distanciaFrente + 1;
+
+			msgNodeGet.noEnviado = recebido.source;
+			msgNodeGet.noDesejado = recebido.noDesejado;
+			msgNodeGet.source = getNodeId();
+			msgNodeGet.target = BROADCAST;
+			msgNodeGet.type = msgType;
+			msgNodeGet.distanciaFrente = dist;
+			qPut(msgNodeGet);
+		end
+	end
+with
+	loop do
+		//Checa se recebeu mensagem SEND para repassar
+		recebidoSend = await RECEIVE(MSG_TIPO_SEND);
+		await 1s;
+		if recebidoSend.distanciaFrente > dist then
+			recebidoDe = recebidoSend.source;
+
+			msgNodeSend.distanciaFrente = dist;
+			msgNodeSend.source = getNodeId();
+			msgNodeSend.target = BROADCAST;
+			msgNodeSend.type = MSG_TIPO_SEND;
+			msgNodeSend.noDesejado = recebidoSend.noDesejado;
+			qPut(msgNodeSend);
+
+			if getNodeId() == 11 then
+				msgNodePath.source = getNodeId();
+				msgNodePath.target = recebidoDe;
+				msgNodePath.type = MSG_TIPO_PATH;
+
+				msgNodePath.noDesejado = recebidoSend.noDesejado;
+
+				emit REQ_TEMP();
+				tValue = await TEMP;
+				tValue = tValue - (tValue/100) * 100;
+				msgNodePath.led = tValue/10;
+
+				qPut(msgNodePath);
+			end
+
+		end
+	end
+with
+	loop do
+		//Checa se recebeu mensagem PATH para repassar
+		recebidoPath = await RECEIVE(MSG_TIPO_PATH);
+		await 1s;
+
+		if getNodeId() == recebidoPath.noDesejado then
+			var short ledTemp = recebidoPath.led;
+			var short resto2 = ledTemp % 2;
+			ledTemp = ledTemp / 2;
+			if resto2 == 1 then
+				emit LED0 (ON);
+			else
+				emit LED0 (OFF);
+			end
+			resto2 = ledTemp % 2;
+			ledTemp = ledTemp / 2;
+			if resto2 == 1 then
+				emit LED1 (ON);
+			else
+				emit LED1 (OFF);
+			end
+			resto2 = ledTemp % 2;
+			ledTemp = ledTemp / 2;
+			if resto2 == 1 then
+				emit LED2 (ON);
+			else
+				emit LED2 (OFF);
+			end
+		else
+			msgNodePath.source = getNodeId();
+			msgNodePath.target = recebidoDe;
+			msgNodePath.type = MSG_TIPO_PATH;
+			msgNodePath.noDesejado = recebidoPath.noDesejado;
+			msgNodePath.led = recebidoPath.led;
+
+			qPut(msgNodePath);
+		end
+	end
+with
+	loop do
+		//Gerenciamento da fila de mensagem
+		await Q_READY;
+		await 1s;
+		loop do
+			if qSize() == 0 then break; end
+			qGet(msgGenerico);
+			if msgGenerico.target == BROADCAST then
+				emit SEND(msgGenerico);
+				await SEND_DONE;
+			else
+				loop i, 10 do
+				// faz 10 tentativas de enviar antes de desistir
+					var ubyte ack;
+					emit SEND_ACK(msgGenerico);
+					ack = await SEND_DONE_ACK;
+					if ack == TRUE then break; end
+					await (100 + random()/100)ms;
+					// tempo para outros nós transmitirem
+				end
+			end
+		end
+	end
+end
