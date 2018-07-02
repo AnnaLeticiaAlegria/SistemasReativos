@@ -5,7 +5,7 @@ function createTimeBar ()
   local posXa, posY = screenWidth/4, screenHeight/16
   local posXb = screenWidth/4
   local firstTime
-  local pace = (screenWidth/1.8)/90
+  local pace = (screenWidth/1.8)/89
   
   return {
     draw = function ()
@@ -14,6 +14,16 @@ function createTimeBar ()
       if (initiateMusic == false) then
         love.graphics.setColor(0,255,0)
         love.graphics.rectangle("fill", posXb,posY,wB,h)
+      end
+      if isGameOver == true then
+        
+        love.graphics.setColor(255,255,255)
+        font = love.graphics.newFont(40)
+        love.graphics.setFont(font)
+        love.graphics.printf(progressBar.getScore() , screenWidth/4, screenHeight/2 , screenWidth, 'center')
+        font = love.graphics.newFont(35)
+        love.graphics.setFont(font)
+        love.graphics.printf("score "..points, screenWidth/4, screenHeight/2 + 50, screenWidth, 'center')
       end
     end,
     setFirstTime = function ()
@@ -32,7 +42,7 @@ function createTimeBar ()
           wB = wB + pace
         end
       else
-        print("GameOver")
+        isGameOver = true
       end
     end
   }
@@ -67,6 +77,15 @@ function createProgressBar ()
         wA = wA - ( (points/50) * pace)
         posXa = posXa + ( (points/50) * pace)
       end
+    end,
+    getScore = function ()
+      if screenWidth/4 + wB > greatSignal then
+        return "great"
+      elseif screenWidth/4 + wB > goodSignal then
+        return "good"
+      else
+        return "fail"
+      end
     end
   }
 end
@@ -79,6 +98,13 @@ function createNote (noteTy)
   local noteType = noteTy
   local fileName
   local isVisible = true
+  
+  local first = love.timer.getTime()
+  
+  local wait = function (sec)
+    first = love.timer.getTime( ) + sec
+    coroutine.yield()
+  end
   
   if noteType == 1 then
     fileName = "nota1a.png"
@@ -102,9 +128,13 @@ function createNote (noteTy)
     getSize = function ()
       return h
     end,
-    update =  function()
-        posY = posY + 10
-    end ,
+    update =  coroutine.wrap( function (self)
+      while true do
+        posY = posY + 5
+        --wait(1/10000, self)
+        wait(speed,self)
+      end
+    end),
     getPosition = function ()
       return posY
     end,
@@ -113,6 +143,16 @@ function createNote (noteTy)
     end,
     getVisible = function ()
       return isVisible
+    end,
+    changeVisible = function ()
+      isVisible = false
+    end,
+    isNoteDisplayed = function ()
+      
+        if(love.timer.getTime( ) > first) then
+          return true
+        end
+      return false
     end,
     changeVisible = function ()
       isVisible = false
@@ -163,7 +203,6 @@ end
 
 function readFile ()
   notesTypelist = {}
-  notesTimelist = {}
   notesInitialTimelist = {}
   myFile = io.open("notesData3.txt","r")
   local text, time, typeNotes, space
@@ -174,12 +213,11 @@ function readFile ()
     time = string.sub(text,1,space-1)
     typeNotes = string.sub(text,space + 1)
     --local randomDt = math.random(10,40) / 1000
-    local noteDt = 4--3/4*screenHeight / 200
-    local noteTime = tonumber(time) - noteDt
+    --local noteDt = 4--3/4*screenHeight / 200
+    local noteTime = tonumber(time)
     if(noteTime < 0) then
       noteTime = 0
     end
-    table.insert(notesTimelist, tonumber(time))
     table.insert(notesTypelist, tonumber(typeNotes))
     table.insert(notesInitialTimelist, noteTime)
     totalNotes = totalNotes + 1
@@ -256,6 +294,10 @@ function love.load()
   firststeptime = love.timer.getTime()
   speed = (80.0/(3*screenHeight))
   
+  readTime = love.timer.getTime()
+  firstDrawTime1 = love.timer.getTime()
+  firstDrawTime2 = love.timer.getTime()
+  firstDrawTime3 = love.timer.getTime()
 end
 
 function love.keypressed(key)
@@ -270,7 +312,7 @@ function checkCollision (noteTy, posY)
   local minDist = screenHeight
   local minI = -1
   local dist
-  for i = 1, #noteslist do
+  for i = deadNotes, #noteslist do
       local ty = noteslist[i].getType()
       local vi = noteslist[i].getVisible()
       if vi == true and ty == noteTy then
@@ -308,12 +350,10 @@ end
 
 function love.update (dt)
   
-  serial = leit:read(1)
-  --print(serial)
-  
   if(start == true) then
-    if love.timer.getTime() - firstTime > 8 and initiateMusic == true then
+    if love.timer.getTime() - firstTime > 5.1 and initiateMusic == true then
       esc:write("1")
+      esc:write(dt)
       initiateMusic = false
       timeBar.setFirstTime()
     end
@@ -326,46 +366,53 @@ function love.update (dt)
   end
   
   timeBar.update()
-  
-  local deltaY, pos
-  if serial=='1' then 
-    deltaY, pos = checkCollision (1, globalBaseY) 
-  elseif serial == '2' then
-    deltaY, pos = checkCollision (2, globalBaseY) 
-  elseif serial == '3' then
-    deltaY, pos = checkCollision (3, globalBaseY) 
-  end
+  if initiateMusic == false then
+    serial = leit:read(1)
+    --print(serial)
+    local deltaY, pos
+    if serial=='1' then 
+      deltaY, pos = checkCollision (1, globalBaseY)
+      firstDrawTime1 = love.timer.getTime()
+    elseif serial == '2' then
+      deltaY, pos = checkCollision (2, globalBaseY)
+      firstDrawTime2 = love.timer.getTime()
+    elseif serial == '3' then
+      deltaY, pos = checkCollision (3, globalBaseY) 
+      firstDrawTime3 = love.timer.getTime()
+    end
 
   
-  if serial ~= '0' then  
-    --print(deltaY.." "..serial)
-    if deltaY < 0 then
-        points = points - 20
-        baseList[tonumber(serial)].changeMessage("miss")
-        esc:write("2")
-    else
-      local bonus
-      if deltaY <= 10 then
-        bonus = 50
-        baseList[tonumber(serial)].changeMessage("perfect!")
-      elseif deltaY <= 20 then
-        bonus = 40
-        baseList[tonumber(serial)].changeMessage("great!")
-      elseif deltaY <= 35 then
-        bonus = 30
-        baseList[tonumber(serial)].changeMessage("cool!")
-      elseif deltaY <= 45 then
-        bonus = 20
-        baseList[tonumber(serial)].changeMessage("ok")
+    if serial ~= '0' then  
+      --print(deltaY.." "..serial)
+      if deltaY < 0 then
+          points = points - 20
+          --baseList[tonumber(serial)].changeMessage("miss")
+          --esc:write("2")
       else
-        bonus = -20
-        baseList[tonumber(serial)].changeMessage("miss")
-        esc:write("2")
-      end
+        local bonus
+        if deltaY <= 10 then
+          bonus = 50
+          baseList[tonumber(serial)].changeMessage("perfect!")
+        elseif deltaY <= 20 then
+          bonus = 40
+          baseList[tonumber(serial)].changeMessage("great!")
+        elseif deltaY <= 35 then
+          bonus = 30
+          baseList[tonumber(serial)].changeMessage("cool!")
+        elseif deltaY <= 45 then
+          bonus = 20
+          baseList[tonumber(serial)].changeMessage("ok")
+        else
+          bonus = -20
+          baseList[tonumber(serial)].changeMessage("miss")
+          --esc:write("2")
+        end
       
-      progressBar.update(bonus)
-      points = points + bonus
-      noteslist[pos].changeVisible()
+        progressBar.update(bonus)
+        points = points + bonus
+        noteslist[pos].changeVisible()
+      end
+      readTime = love.timer.getTime()
     end
   end
   
@@ -374,10 +421,22 @@ function love.update (dt)
   if isGameOver == false and  isWinner == false then
     
     for i = deadNotes, #noteslist do
-      if 1 then--(love.timer.getTime() - firststeptime) > speed then
-        noteslist[i].update()
+       if (noteslist[i].isNoteDisplayed()) then
+        noteslist[i]:update()
       end
     end
+  end
+  if love.timer.getTime() - firstDrawTime1 > 1 then
+      baseList[1].changeMessage("")
+      firstDrawTime1 = love.timer.getTime()
+  end
+  if love.timer.getTime() - firstDrawTime2 > 1 then
+      baseList[2].changeMessage("")
+      firstDrawTime2 = love.timer.getTime()
+  end
+  if love.timer.getTime() - firstDrawTime3 > 1 then
+      baseList[3].changeMessage("")
+      firstDrawTime3 = love.timer.getTime()
   end
 end
 
@@ -388,7 +447,6 @@ function love.draw ()
   end
   for i = 1, #baseList do
       baseList[i].draw()
-      baseList[i].changeMessage(" ")
   end
   for i = deadNotes, #noteslist do
       noteslist[i].draw()

@@ -27,6 +27,10 @@ int currentTime [4];
 double initArdTime;
 bool start = false;
 
+double readTime;
+double firstPress1;
+double deltaT;
+
 // mp3 module initialization
 SoftwareSerial mySoftwareSerial(A9, A8); // RX, TX
 DFRobotDFPlayerMini myDFPlayer;
@@ -111,7 +115,7 @@ void setup() {
     while(true);
   }
   
-  myDFPlayer.volume(20);  //Set volume value. From 0 to 30
+  myDFPlayer.volume(25);  //Set volume value. From 0 to 30
 
   // put your setup code here, to run once:
   // initialize serial communication at 9600 bits per second:
@@ -137,11 +141,13 @@ void setup() {
    pinMode(DATA_DIO,OUTPUT);
 
   initialTime ();
+  readTime = millis();
+  firstPress1 = millis();
 }
 
 void pisca (int led) {
   digitalWrite(led, LOW);
-  //delay(300);
+  delay(300);
   digitalWrite(led, HIGH);
 }
 
@@ -154,42 +160,49 @@ void loop() {
   int button2State = digitalRead(KEY2);
   int button3State = digitalRead(KEY3);
   runWriteTime ();
-  if (button1State == LOW) {
-    Serial.write("1");
-    pisca(LED2);
-  }
-  else
+
+  if(start == true)
   {
-    if (button2State == LOW)
+    if(millis() - firstPress1 > deltaT)
     {
-      Serial.write("2");
-      pisca(LED3);
-    }
-    else
-    {
-      if (button3State == LOW)
-      {
-        Serial.write("3");
-        pisca(LED4);
+      if (button1State == LOW) {
+        Serial.write("1");
+        //pisca(LED2);
       }
-      else Serial.write("0");
+      else
+      {
+        if (button2State == LOW)
+        {
+          Serial.write("2");
+          //pisca(LED3);
+        }
+        else
+        {
+          if (button3State == LOW)
+          {
+            Serial.write("3");
+            //pisca(LED4);
+          }
+          else Serial.write("0");
+        }
+      }
+      firstPress1 = millis();
     }
   }
-  if (Serial.available() > 0) {
+  if ((millis() - readTime) > 100 && Serial.available() > 0) {
     incomingByte = Serial.read();
     if(firstTime == 0 && incomingByte == '1')
     {
       myDFPlayer.play(2);  //Play the first mp3
       firstTime = 1;
       start = true;
-      pisca(LED3);
+      //pisca(LED3);
+      deltaT = Serial.read();
+      firstPress1 = millis();
     }
-    if (incomingByte == '2')
-    {
-      //apita();
-    }
-    pisca(LED1);
+    //pisca(LED1);
     //Serial.write(incomingByte);
+    readTime = millis();
   }
-  delay(100);       // delay in between reads for stability
+  delay(10);       // delay in between reads for stability
 }
